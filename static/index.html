@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sci-Fi Dystopia Index</title>
+  <style>
+    :root {
+      --bg:      #0d0d14;
+      --card:    #13131f;
+      --card2:   #0f0f1a;
+      --border:  #252538;
+      --text:    #e2e8f0;
+      --muted:   #64748b;
+      --accent:  #f97316;
+      --danger:  #ef4444;
+      --warn:    #f59e0b;
+      --safe:    #22c55e;
+      --mono:    'Courier New', Courier, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      font-family: var(--mono);
+      font-size: 0.95rem;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .blink {
+      animation: blink 1.8s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    #last-updated {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    #refresh-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 3px;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    #refresh-btn:hover  { opacity: 0.85; }
+    #refresh-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ── Layout ── */
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ── Empty state ── */
+    #empty-state {
+      text-align: center;
+      padding: 100px 20px;
+      color: var(--muted);
+    }
+    #empty-state h2 {
+      font-family: var(--mono);
+      font-size: 1rem;
+      color: var(--text);
+      letter-spacing: 0.15em;
+      margin-bottom: 10px;
+    }
+    #empty-state p { font-size: 0.85rem; margin-bottom: 20px; }
+
+    /* ── Loading / progress ── */
+    #loading-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 28px;
+      margin-bottom: 28px;
+    }
+    #progress-header {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+    .pbar-bg {
+      background: #1a1a2e;
+      height: 5px;
+      border-radius: 3px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    #progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+    #progress-log {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    .log-line { padding: 2px 0; border-bottom: 1px solid #16162a; }
+    .log-ok  { color: var(--safe); }
+    .log-err { color: var(--danger); }
+
+    /* ── Summary card ── */
+    #summary-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: 22px 26px;
+      margin-bottom: 24px;
+    }
+    .card-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    #summary-text {
+      line-height: 1.75;
+      color: var(--text);
+      font-size: 0.92rem;
+    }
+
+    /* ── Two-column ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 740px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 20px 22px;
+    }
+
+    /* ── Rankings ── */
+    .rank-item { margin-bottom: 14px; }
+    .rank-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .rank-num {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      min-width: 28px;
+    }
+    .rank-title {
+      flex: 1;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .rank-avg {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .bar-bg {
+      background: #1a1a2e;
+      height: 4px;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1s ease;
+    }
+    .rank-sub {
+      font-size: 0.67rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* ── Themes ── */
+    .themes-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .theme-pill {
+      background: #1a1a2e;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 0.72rem;
+    }
+
+    /* ── Articles ── */
+    #articles-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 20px 22px;
+    }
+
+    .article-row {
+      border-bottom: 1px solid var(--border);
+      padding: 10px 0;
+    }
+    .article-row:last-child { border-bottom: none; }
+
+    .article-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .article-chevron {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 2px;
+      transition: transform 0.2s;
+      min-width: 10px;
+    }
+    .article-chevron.open { transform: rotate(90deg); }
+
+    .article-headline {
+      flex: 1;
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+
+    .score-badge {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: bold;
+      padding: 2px 7px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    .article-story-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+      padding-left: 18px;
+    }
+    .story-tag {
+      font-size: 0.67rem;
+      color: var(--muted);
+      background: #16162a;
+      padding: 2px 7px;
+      border-radius: 3px;
+    }
+
+    .article-detail {
+      display: none;
+      padding: 10px 0 4px 18px;
+    }
+    .article-detail.open { display: block; }
+
+    .dtag {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+    }
+    .dtag-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .dtag-title { font-weight: 600; font-size: 0.85rem; }
+    .dtag-author { font-size: 0.68rem; color: var(--muted); }
+    .dtag-score {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: bold;
+    }
+    .dtag-elements { margin: 5px 0; }
+    .dtag-el {
+      font-size: 0.72rem;
+      color: var(--muted);
+      padding: 1px 0;
+    }
+    .dtag-el::before { content: '• '; color: var(--accent); }
+    .dtag-why {
+      font-size: 0.72rem;
+      font-style: italic;
+      line-height: 1.55;
+      color: #94a3b8;
+      margin-top: 6px;
+      border-top: 1px solid var(--border);
+      padding-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="blink">▌</span> SCI-FI DYSTOPIA INDEX
+  </div>
+  <div class="header-right">
+    <span id="last-updated"></span>
+    <button id="refresh-btn" onclick="startRefresh()">↻ Refresh</button>
+  </div>
+</header>
+
+<main>
+  <!-- Empty -->
+  <div id="empty-state" class="hidden">
+    <h2>NO DATA</h2>
+    <p>Click <strong>Refresh</strong> to fetch today's news and build the index.</p>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading-panel" class="hidden">
+    <div id="progress-header">Initializing...</div>
+    <div class="pbar-bg"><div id="progress-fill"></div></div>
+    <div id="progress-log"></div>
+  </div>
+
+  <!-- Content -->
+  <div id="content" class="hidden">
+
+    <div id="summary-card">
+      <div class="card-label">Current Assessment</div>
+      <div id="summary-text"></div>
+    </div>
+
+    <div class="two-col">
+      <div class="panel">
+        <div class="card-label">Story Rankings</div>
+        <div id="rankings-list"></div>
+      </div>
+      <div class="panel">
+        <div class="card-label">Trending Themes</div>
+        <div class="themes-wrap" id="themes-list"></div>
+      </div>
+    </div>
+
+    <div id="articles-panel">
+      <div class="card-label">Analyzed Articles &mdash; <span id="article-count"></span></div>
+      <div id="articles-list"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  // ── Helpers ─────────────────────────────────────────────────────────────
+
+  function scoreColor(s) {
+    return s >= 0.65 ? 'var(--danger)' : s >= 0.4 ? 'var(--warn)' : 'var(--safe)';
+  }
+  function scoreBg(s) {
+    return s >= 0.65 ? 'rgba(239,68,68,.15)' : s >= 0.4 ? 'rgba(245,158,11,.15)' : 'rgba(34,197,94,.15)';
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
+
+  function renderIndex(data) {
+    const idx = data.index;
+
+    // Summary
+    document.getElementById('summary-text').textContent = idx.index_summary;
+
+    // Article count
+    document.getElementById('article-count').textContent =
+      `${idx.article_count} article${idx.article_count !== 1 ? 's' : ''}`;
+
+    // Rankings
+    const maxCum = idx.top_stories[0]?.cumulative_score || 1;
+    document.getElementById('rankings-list').innerHTML = idx.top_stories.map((s, i) => `
+      <div class="rank-item">
+        <div class="rank-row">
+          <span class="rank-num">#${String(i + 1).padStart(2, '0')}</span>
+          <span class="rank-title">${esc(s.story_title)}</span>
+          <span class="rank-avg" style="color:${scoreColor(s.avg_score)}">${s.avg_score.toFixed(2)}</span>
+        </div>
+        <div class="bar-bg">
+          <div class="bar-fill" style="width:${(s.cumulative_score / maxCum * 100).toFixed(1)}%;background:${scoreColor(s.avg_score)}"></div>
+        </div>
+        <div class="rank-sub">${s.article_count} article${s.article_count !== 1 ? 's' : ''} &middot; cumulative ${s.cumulative_score.toFixed(2)}</div>
+      </div>
+    `).join('');
+
+    // Themes
+    document.getElementById('themes-list').innerHTML =
+      idx.trending_themes.map(t => `<span class="theme-pill">${esc(t)}</span>`).join('');
+
+    // Articles
+    document.getElementById('articles-list').innerHTML = (data.analyses || []).map((a, i) => `
+      <div class="article-row">
+        <div class="article-top" onclick="toggle(${i})">
+          <span class="article-chevron" id="chev-${i}">▶</span>
+          <span class="article-headline">${esc(a.headline)}</span>
+          <span class="score-badge" style="color:${scoreColor(a.overall_dystopia_score)};background:${scoreBg(a.overall_dystopia_score)}">
+            ${a.overall_dystopia_score.toFixed(2)}
+          </span>
+        </div>
+        <div class="article-story-tags">
+          ${a.dystopia_tags.map(t => `<span class="story-tag">${esc(t.story_title)}</span>`).join('')}
+        </div>
+        <div class="article-detail" id="detail-${i}">
+          ${a.dystopia_tags.map(tag => `
+            <div class="dtag">
+              <div class="dtag-head">
+                <div>
+                  <span class="dtag-title">${esc(tag.story_title)}</span>
+                  <span class="dtag-author"> — ${esc(tag.author_or_director)}</span>
+                </div>
+                <span class="dtag-score" style="color:${scoreColor(tag.alignment_score)}">${tag.alignment_score.toFixed(2)}</span>
+              </div>
+              <div class="dtag-elements">
+                ${tag.matching_elements.map(e => `<div class="dtag-el">${esc(e)}</div>`).join('')}
+              </div>
+              <div class="dtag-why">${esc(tag.explanation)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    show('content');
+  }
+
+  function toggle(i) {
+    document.getElementById(`detail-${i}`).classList.toggle('open');
+    document.getElementById(`chev-${i}`).classList.toggle('open');
+  }
+
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── State ────────────────────────────────────────────────────────────────
+
+  function show(id) {
+    ['empty-state', 'loading-panel', 'content'].forEach(s =>
+      document.getElementById(s).classList.add('hidden')
+    );
+    document.getElementById(id).classList.remove('hidden');
+  }
+
+  // ── Load existing data ───────────────────────────────────────────────────
+
+  async function loadIndex() {
+    try {
+      const resp = await fetch('/api/index');
+      const data = await resp.json();
+      if (data.status === 'empty') {
+        show('empty-state');
+      } else {
+        renderIndex(data);
+        document.getElementById('last-updated').textContent =
+          `${data.index.article_count} articles`;
+      }
+    } catch (e) {
+      show('empty-state');
+    }
+  }
+
+  // ── Refresh (SSE) ────────────────────────────────────────────────────────
+
+  function startRefresh() {
+    const btn = document.getElementById('refresh-btn');
+    btn.disabled = true;
+    btn.textContent = '⟳ Running...';
+
+    show('loading-panel');
+    document.getElementById('progress-log').innerHTML = '';
+    document.getElementById('progress-fill').style.width = '0%';
+    document.getElementById('progress-header').textContent = 'Connecting...';
+
+    let total = 10, done = 0;
+
+    const src = new EventSource('/api/refresh/stream');
+
+    src.onmessage = e => {
+      const msg = JSON.parse(e.data);
+
+      if (msg.type === 'status') {
+        document.getElementById('progress-header').textContent = msg.message;
+        log(msg.message, '');
+
+      } else if (msg.type === 'fetched') {
+        total = msg.count;
+        document.getElementById('progress-header').textContent = `Analyzing ${total} articles...`;
+        log(`Fetched ${total} articles from NewsAPI`, 'ok');
+        setBar(5);
+
+      } else if (msg.type === 'analyzing') {
+        document.getElementById('progress-header').textContent =
+          `[${msg.num}/${msg.total}] ${msg.headline.substring(0, 65)}...`;
+
+      } else if (msg.type === 'analyzed') {
+        done++;
+        setBar(5 + (done / total) * 85);
+        log(`✓ [${msg.num}/${msg.total}] ${msg.headline.substring(0, 72)}`, 'ok');
+
+      } else if (msg.type === 'error') {
+        log(`✗ ${msg.headline.substring(0, 60)}: ${msg.error}`, 'err');
+
+      } else if (msg.type === 'complete') {
+        setBar(100);
+        log('Index built.', 'ok');
+        src.close();
+        setTimeout(() => {
+          renderIndex(msg.data);
+          document.getElementById('last-updated').textContent =
+            `Updated just now · ${msg.data.index.article_count} articles`;
+          btn.disabled = false;
+          btn.textContent = '↻ Refresh';
+        }, 700);
+
+      } else if (msg.type === 'fatal_error') {
+        log(`FATAL: ${msg.error}`, 'err');
+        src.close();
+        btn.disabled = false;
+        btn.textContent = '↻ Refresh';
+      }
+    };
+
+    src.onerror = () => {
+      log('Connection lost.', 'err');
+      src.close();
+      btn.disabled = false;
+      btn.textContent = '↻ Refresh';
+    };
+  }
+
+  function setBar(pct) {
+    document.getElementById('progress-fill').style.width = pct + '%';
+  }
+
+  function log(msg, cls) {
+    const el = document.getElementById('progress-log');
+    const line = document.createElement('div');
+    line.className = `log-line log-${cls}`;
+    line.textContent = `> ${msg}`;
+    el.appendChild(line);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  loadIndex();
+</script>
+</body>
+</html>
